@@ -4,6 +4,15 @@
 library(tidyverse)
 library(ggbump)
 library(patchwork)
+library(magick)
+library(cowplot)
+library(glue)
+library(ggtext)
+library(ggimage) #for working with logos
+library(janitor)
+library(lubridate)
+library(zoo)
+
 
 # Repo link: https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-07-12
 
@@ -90,7 +99,7 @@ country_colors <- c(
     'Portugal' = "#046A38",
     'Switzerland' = "#DA291C",
     'Poland' = "#DC143C",
-    'Greece' = "#001489",
+    'Greece' = "#001489"
 )
 
 description_color <- 'grey40'
@@ -157,7 +166,7 @@ country_rank_by_year %>%
     ) +
     scale_y_reverse(position = 'right', breaks = seq(16, 2, -2)) +
     scale_color_manual(values = country_colors) +
-    coord_cartesian(xlim = c(2014, 2022.5), ylim = c(10.5, 0.25), expand = F) +
+    coord_cartesian(xlim = c(2014, 2022.5), ylim = c(13.5, 0.25), expand = F) +
     theme_custom() +
     theme(
         legend.position = 'none',
@@ -181,7 +190,7 @@ country_rank_by_year %>%
     ) +
     labs(x = "",
          y = "",
-        title = 'Top 10 European Countries for Flights',
+        title = 'Top 12 European Countries for Flights',
         subtitle = 'Ranked by number of incoming and outgoing flights from 2016-2022. 2022 data thru May.',
         caption = "TidyTuesday 2022 - Week 28 | Source: Eurocontrol | Plot: @steodosescu"
     )
@@ -193,7 +202,7 @@ ggsave("Flight Bumps Chart.png")
 # Add logo to plot
 flight_bumps_chart_with_logo <- add_logo(
     plot_path = "/Users/Stephan/Desktop/R Projects/Tidy-Tuesday/Flight Bumps Chart.png", # url or local file for the plot
-    logo_path = "/Users/Stephan/Desktop/R Projects/Tidy-Tuesday/european-union.png", # url or local file for the logo
+    logo_path = "/Users/Stephan/Desktop/R Projects/Tidy-Tuesday/europe.png", # url or local file for the logo
     logo_position = "top left", # choose a corner
     # 'top left', 'top right', 'bottom left' or 'bottom right'
     logo_scale = 20
@@ -209,5 +218,64 @@ magick::image_write(flight_bumps_chart_with_logo, "Flight Bumps Chart with Logo.
 # prepare data
 flights_grouped <- flights %>% 
     select(year, month_num, month_mon, state = state_name, flights = flt_tot_1) %>% 
-    group_by(year, month_num, state) %>% 
-    summarise(flights = mean(flights))
+    group_by(year, month_num, month_mon, state) %>% 
+    summarise(flights = sum(flights))
+
+# use zoo package to create year-month date object for plotting
+flights_grouped$date <- as.yearmon(paste(flights_grouped$year, flights_grouped$month_num), "%Y %m")
+
+# set up duplicate country column for charting purposes 
+flights_grouped$stateDuplicate <- flights_grouped$state
+
+
+# Make flag colors and logo df
+
+flag_colors <- tibble(
+    state = c('United Kingdom','Germany', 'Spain', 'France', 'Italy', 'Türkiye', 
+              'Netherlands', 'Norway', 'Switzerand', 'Greece', 'Portugal', 'Poland'),
+    state_abbr = c('UK', 'DE', 'ES', 'FR', 'IT', 'TK', 'NL', 'NO', 'CH', 'GR', 'PL', 'PO'),
+    flag_color = c("#012169","#DD0000")
+    )
+
+'United Kingdom' = "#012169",
+'Germany' = "#DD0000",
+'Spain' = "#F1BF00",
+'France' = "#002654",
+'Italy' = "#008C45", 
+'Türkiye' = "#C8102E",
+'Norway' = "#BA0C2F",
+'Netherlands' = "#F36C21",
+'Portugal' = "#046A38",
+'Switzerland' = "#DA291C",
+'Poland' = "#DC143C",
+'Greece' = "#001489"
+
+# filter for 12 countries and join flag icons
+
+flights_grouped2
+
+# make chart
+p1 <- flights_grouped2 %>% 
+    ggplot(aes(x = date, y = flights)) + 
+    #geom_smooth(data = mutate(team_games2, home = NULL), aes(group = teamDuplicate), method = "lm", formula = y ~ splines::bs(x, 5), se = FALSE, colour = 'grey80', size = .25, alpha = .5) +
+    #geom_smooth(aes(group = team, color = team_color1), method = "lm",  formula = y ~ splines::bs(x, 5), se = FALSE, size = .5, alpha = 1, show.legend = FALSE) +
+    geom_line(data = mutate(flights_grouped2, state_abbr = NULL), aes(group = stateDuplicate), colour = 'grey80', size = .25, alpha = .5) +
+    geom_line(aes(group = state, color = team_color1), size = .5, alpha = 1, show.legend = FALSE) +
+    scale_color_identity() +
+    facet_wrap(~fct_reorder(state, -flights)) +
+    theme_custom() + 
+    geom_hline(yintercept = 0, linetype = "dashed", color = "#a39d9d") +
+    theme(plot.title.position = 'plot', 
+          plot.title = element_text(face = 'bold'), 
+          plot.margin = margin(10, 10, 15, 10), 
+          panel.spacing = unit(0.5, 'lines')) +
+    scale_y_continuous(
+        labels = signs::signs_format(add_plusses = TRUE), #trick to get + in front of positive numbers
+        breaks = seq(-100, 100, 50)) +
+    labs(x = "Game No.", 
+         y = "Goal Differential", 
+         title = "2021-22 NHL Goal Differential",
+         subtitle = glue("Teams sorted by total goal differential thru {latest_game} games."),
+         caption = "Data: hockeyR\nGraphic: @steodosescu") +
+    theme(plot.title = element_markdown()) +
+    theme(plot.subtitle = element_markdown())
