@@ -199,7 +199,7 @@ flights_bump_chart <- country_rank_by_year %>%
     labs(x = "",
          y = "",
         title = 'Top 12 European Countries for Flights',
-        subtitle = 'Ranked by number of incoming and outgoing flights from 2016-2022. 2022 data thru May.'
+        subtitle = 'Ranked by no. of departing and arriving flights from 2016-2022. 2022 data thru May.'
     )
 
 flights_bump_chart
@@ -276,9 +276,9 @@ p1 <- flights_grouped2 %>%
     scale_y_continuous(
         labels = scales::comma) +
     labs(x = "", 
-         y = "Flights per Month", 
-         title = "Total Flights per Month",
-         subtitle = "Ranked by total number of incoming and outgoing flights from Jan 2016 thru May 2022.",
+         y = "Total IFR Movements", 
+         title = "Monthly Seasonality of Flying",
+         subtitle = "Ordered by total number of departing and arriving flights from Jan 2016 thru May 2022.",
          caption = "TidyTuesday 2022 - Week 28 | Source: Eurocontrol | Plot: @steodosescu") +
     theme(plot.title = element_markdown()) +
     theme(plot.subtitle = element_markdown())
