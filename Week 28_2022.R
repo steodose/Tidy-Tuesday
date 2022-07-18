@@ -110,7 +110,7 @@ description_color <- 'grey40'
 # change Turkey's name as the formatting doesn't play nice with code
 flights <- flights %>%
     mutate(state_name = case_when(
-        state_name == 'Turkey' ~ 'Turkey',
+        state_name == 'Türkiye' ~ 'Turkey',
                            TRUE ~ state_name))
 
 
@@ -236,13 +236,19 @@ flag_colors <- tibble(
 flag_colors <- flag_colors %>% 
     mutate('flag_logo' = paste0('https://raw.githubusercontent.com/steodose/Tidy-Tuesday/master/flags/', state, '.png'))
 
+# change UK flag logo path to account for the space in United Kingdom
+flag_colors <- flag_colors %>% 
+    mutate(flag_logo = case_when(
+        flag_logo == 'https://raw.githubusercontent.com/steodose/Tidy-Tuesday/master/flags/United Kingdom.png' ~ 'https://raw.githubusercontent.com/steodose/Tidy-Tuesday/master/flags/United%20Kingdom.png',
+        TRUE ~ flag_logo))
+
 # filter for 12 countries and join flag icons
 flights_grouped2 <- flights_grouped %>% 
     filter(state %in% todays_top)
 
 flights_grouped2 <- flights_grouped2 %>% 
     left_join(flag_colors, by = 'state')
-    
+
 
 # make chart
 p1 <- flights_grouped2 %>% 
@@ -327,8 +333,11 @@ ggsave("Flights Facet Chart.png", p1, w = 6, h = 6, dpi = 300)
 
 
 ## Combine plots with patchwork
-
-flights_bump_chart/p1
+flights_bump_chart/p1 +
+    theme(
+        plot.background = element_rect(color = "floralwhite", fill = "floralwhite"),
+        plot.margin = margin(1, 0.5, 0.5, 0.5, unit = "line")
+        )
 
 ggsave("European Flights Patchwork.png", width = 8, height = 10)
 
