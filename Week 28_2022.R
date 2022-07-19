@@ -13,6 +13,7 @@ library(janitor)
 library(lubridate)
 library(zoo)
 library(scales)
+library(gt)
 
 
 # Repo link: https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-07-12
@@ -35,6 +36,45 @@ theme_custom <- function () {
 
 # Define an aspect ratio to use throughout. This value is the golden ratio which provides a wider than tall rectangle
 asp_ratio <- 1.618 
+
+# Table theme
+gt_theme_538 <- function(data,...) {
+    data %>%
+        opt_table_font(
+            font = list(
+                google_font("Outfit"),
+                default_fonts()
+            )
+        ) %>%
+        tab_style(
+            style = cell_borders(
+                sides = "bottom", color = "transparent", weight = px(2)
+            ),
+            locations = cells_body(
+                columns = TRUE,
+                # This is a relatively sneaky way of changing the bottom border
+                # Regardless of data size
+                rows = nrow(data$`_data`)
+            )
+        )  %>% 
+        tab_options(
+            column_labels.background.color = "white",
+            table.border.top.width = px(3),
+            table.border.top.color = "transparent",
+            table.border.bottom.color = "transparent",
+            table.border.bottom.width = px(3),
+            column_labels.border.top.width = px(3),
+            column_labels.border.top.color = "transparent",
+            column_labels.border.bottom.width = px(3),
+            column_labels.border.bottom.color = "black",
+            data_row.padding = px(3),
+            source_notes.font.size = 12,
+            table.font.size = 16,
+            heading.align = "left",
+            ...
+        ) 
+}
+
 
 # Function for plot with logo generation
 add_logo <- function(plot_path, logo_path, logo_position, logo_scale = 10){
@@ -352,3 +392,75 @@ flight_bumps_chart_with_logo <- add_logo(
 
 # save the image and write to working directory
 magick::image_write(flight_bumps_chart_with_logo, "European Flights Patchwork with Logo.png")
+
+
+## 3. -------------- Monthly Rankings Table ----------------
+
+flights_grouped3 <- flights_grouped %>% 
+    filter(year <= 2019) %>% 
+    group_by(month_mon) %>% 
+    summarise(flights = sum(flights)) %>% 
+    arrange(desc(flights)) %>%
+    mutate(flights_per_year = flights/4,
+           rank = row_number()) %>% 
+    relocate(rank)
+
+# compute total flights in timeframe
+total_flights <- sum(flights_grouped3$flights_per_year)
+
+# make table
+flights_grouped3 %>% 
+    mutate(percent_total = flights_per_year/total_flights) %>% 
+    gt() %>%
+    cols_label(
+        rank = "Rank",
+        month_mon = "Month",
+        flights = "Total Flights",
+        flights_per_year = "Flights per Year",
+        percent_total = "Yearly Share"
+    ) %>% 
+    data_color(
+        columns = 4, 
+        colors = scales::col_numeric(
+            palette = paletteer::paletteer_d(
+                palette = "ggsci::deep-orange_material"
+            ) %>% as.character(),
+            domain = NULL
+        )) %>%
+    cols_width(
+        rank ~ px(60)
+    ) %>% 
+    cols_width(
+        month_mon ~ px(50)
+    ) %>% 
+    fmt_number(columns = vars(flights,flights_per_year), decimals = 0, sep_mark = ",") %>%
+    fmt_percent(columns = vars(percent_total)) %>% 
+    tab_options(
+        table.background.color = "floralwhite",
+        table.font.names = "Outfit", 
+        table.font.color = 'black',
+        table.border.top.color = "transparent",
+        table.width = 450,
+    ) %>%
+    tab_header(title = md("**Monthly Flights in Europe**"),
+               subtitle ="Analysis limited to pre COVID-19 pandemic timeframe (2016 thru 2019) to get a cleaner view of monthly travel trends.") %>%
+    tab_source_note(
+        source_note = md("Data: Eurocontrol<br>Table: @steodosescu")) %>% 
+    tab_footnote(
+        footnote = "IFR air transport movements are calculated as the sum of take offs and landings performed under instrument flight rules. It's used as a proxy for how many flights are taking place in a given country.",
+        locations = cells_column_labels(vars(flights))
+    ) %>% 
+    gtsave("Monthly European Flights Table.png")
+
+
+# Add logo to table
+flights_table_with_logo <- add_logo(
+    plot_path = "/Users/Stephan/Desktop/R Projects/Tidy-Tuesday/Monthly European Flights Table.png", # url or local file for the plot
+    logo_path = "/Users/Stephan/Desktop/R Projects/Tidy-Tuesday/europe.png", # url or local file for the logo
+    logo_position = "top left", # choose a corner
+    # 'top left', 'top right', 'bottom left' or 'bottom right'
+    logo_scale = 20
+)
+
+# save the image and write to working directory
+magick::image_write(flights_table_with_logo, "Monthly European Flights Table with Logo.png")
