@@ -117,7 +117,8 @@ dollar_volume_plot <- big_tech_stock_prices %>%
     scale_x_continuous(breaks = seq(2010, 2022, 1)) +
     coord_cartesian(clip = 'off') +
     theme_custom() +
-    theme(legend.position = "bottom", 
+    theme(legend.position = "bottom",
+          legend.title = element_blank(),
           axis.text.x = element_text(size = 10, 
                                      vjust = 2.75, 
                                      hjust = 1.5),
