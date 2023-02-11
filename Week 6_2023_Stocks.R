@@ -8,6 +8,7 @@ library(ggimage)
 library(ggstream)
 library(scales)
 library(patchwork)
+library(grid)
 
 # Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
 theme_custom <- function () { 
@@ -53,7 +54,7 @@ companies_logos_df <- big_tech_stock_prices |>
     ungroup()
 
 
-## 1. ----------------- Big Tech Facet ---------------------
+## 1. ----------------- Big Tech Facet Plot ---------------------
 
 # Main plot: company facet
 
@@ -71,8 +72,7 @@ big_tech_plot <- ggplot() +
      ) +
      labs(
          title = "Big Tech has Gotten Bigger",
-         subtitle = "Evolution of select technology stock prices between 2010 and 2022",
-         caption = "Data: Yahoo Finance/Evan Gower | Graphic: @steodosescu"
+         subtitle = "Evolution of select technology stock prices between 2010 and 2022"
      ) +
      scale_color_identity() +
      scale_fill_identity() +
@@ -82,7 +82,7 @@ big_tech_plot <- ggplot() +
      theme_custom() +
      theme(
          plot.title = element_text(color = "black", face = "bold", family = "Outfit", hjust = 0.5, size = rel(3.0), margin = margin(b = .5, unit = "cm")),
-         plot.subtitle = element_text(color = "#444444", family = "Outfit", hjust = 0.5, size = rel(1.2), margin = margin(b = 1, unit = "cm")),
+         plot.subtitle = element_text(color = "#444444", family = "Outfit", hjust = 0.5, margin = margin(b = 1, unit = "cm")),
          strip.text = element_blank(),
          panel.spacing.x = unit(1, "cm"),
          panel.spacing.y = unit(1.5, "cm"),
@@ -130,9 +130,10 @@ dollar_volume_plot <- big_tech_stock_prices %>%
           plot.subtitle = element_text(hjust = 0.5),
           plot.margin = margin(10, 10, 15, 10)) +
     labs(x = "", 
-         y = "Dollar Volume ($)", 
+         y = "Close Price * Volume ($)", 
          title = "Big Tech Trading Volumes", 
-         subtitle = "Dollar volume (Price * Volume) of six of the US's biggest tech companies have been declining in recent months.")
+         subtitle = "Dollar volumes of six of the US's biggest tech stocks have increased overall, but are in decline recently.",
+         caption = "Data: Yahoo Finance/Evan Gower | Graphic: @steodosescu")
 
 dollar_volume_plot
 
@@ -142,9 +143,12 @@ ggsave("2023/W6_Big Tech Dollar Volumes.png", device = ragg::agg_png, dpi = 300)
 ## Combine plots with patchwork
 big_tech_plot / dollar_volume_plot +
     theme(
+        panel.background = element_rect(fill= "floralwhite", color=NA),
         plot.background = element_rect(color = "floralwhite", fill = "floralwhite"),
         plot.margin = margin(1, 0.5, 0.5, 0.5, unit = "line")
     )
+
+
 
 ggsave("2023/W6_Big Tech Patchwork.png", device = ragg::agg_png, dpi = 300, width = 8, height = 16)
 
